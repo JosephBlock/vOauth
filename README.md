@@ -1,5 +1,8 @@
 # vOauth
 vOauth v1
+
+install using Composer: ``` composer require josephblock/voauth```
+
 Example in test/v.php
 
 
