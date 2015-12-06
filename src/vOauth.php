@@ -1,9 +1,12 @@
 <?php
 
-
-/**todo: handle errors in a better way
+/**
  *
- * Class vOAUTH
+ * Licence: MIT License (MIT)
+ * Copyright (c) 2015 Joseph Block
+ *
+ * This class is used to communicate and authenticate against V
+ *
  */
 class vOauth
 {
@@ -55,17 +58,19 @@ class vOauth
 	}
 
 	/**
+	 * @param $state
+	 *
 	 * @return string
 	 * @throws Exception
 	 */
-	public function getAuthURL()
+	public function getAuthURL($state)
 	{
 		if (!$this->redirect) throw new Exception('You must provide a redirect URL');
 		if (!$this->scopes) throw new Exception('You must provide a OAuth scope');
-		$scope = implode($this->scopes, " ");
+		$scope = implode($this->scopes, "%20");
 
 
-		$url = $this->root . vOAUTH::ENDPOINT_AUTH . "?type=web_server&client_id=" . $this->client . "&redirect_uri=" . $this->redirect . "&response_type=code&scope=" . $scope . "&state=" . md5("someRandomStuff");
+		$url = $this->root . vOAUTH::ENDPOINT_AUTH . "?type=web_server&client_id=" . $this->client . "&redirect_uri=" . $this->redirect . "&response_type=code&scope=" . $scope . "&state=" . md5($state);
 		return $url;
 	}
 
@@ -86,10 +91,12 @@ class vOauth
 	}
 
 	/**
+	 * @param $state
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getToken()
+	public function getToken($state)
 	{
 		if (!$this->code) throw new Exception("Required: use setCode before calling this function");
 
@@ -99,7 +106,7 @@ class vOauth
 			'client_id'     => $this->client,
 			'client_secret' => $this->secret,
 			'redirect_uri'  => $this->redirect,
-			"state"         => md5("moreRandomStuff")
+			'state'         => md5($state)
 		);
 		try {
 			$result = $this->callPost(vOAUTH::ENDPOINT_TOKEN, $fields);
@@ -110,6 +117,14 @@ class vOauth
 		} catch (Exception $e) {
 			throw $e;
 		}
+	}
+
+	/**
+	 * @param mixed $token
+	 */
+	public function setToken($token)
+	{
+		$this->token = $token;
 	}
 
 	/**
@@ -139,25 +154,32 @@ class vOauth
 			throw new Exception("API call to $url failed: " . curl_error($ch));
 		}
 		$result = json_decode($response_body);
-		if ($result->{'error'}) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
+		if (isset($result->{'error'})) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
 		if ($result === null) throw new Exception('We were unable to decode the JSON response from the API: ' . $response_body);
 		return $result;
 	}
 
 	/**
 	 * Json returned: enlid,vlevel,vpoints,quarantine,active,blacklisted,verified,agent
+	 *
+	 * @param array $field
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getVInfo()
+	public function getVInfo($field = array())
 	{
 		if (!$this->token) throw new Exception("No token");
-		$fields = array(
-			"state" => md5("redirect")
-		);
+		$fields = array();
+		$fields = array_merge($fields, $field);
 		try {
 			$result = $this->callPost(vOAUTH::URL_PROFILE, $fields, "Authorization: Bearer " . $this->token);
-			return $result->{'data'};
+			if ($result->{'status'} === "error") {
+				return false;
+			} else {
+				return $result->{'data'};
+			}
+
 		} catch (Exception $e) {
 			throw $e;
 		}
@@ -169,19 +191,27 @@ class vOauth
 	 * "updated_at":{date,timezone_type,timezone }
 	 *
 	 *
+	 * @param array $field
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getOpenIDProfile()
+	public function getOpenIDProfile($field = array())
 	{
 		if (!$this->token) throw new Exception("No token");
-		$fields = array(
-			"state" => md5("redirect")
-		);
+		$fields = array();
+		$fields = array_merge($fields, $field);
 		try {
 			$result = $this->callPost(vOAUTH::URL_OAUTH_USERINFO, $fields, "Authorization: Bearer " . $this->token);
-			echo json_encode($result);
-			return $result;
+
+			if ($result->{'status'} === "error") {
+				return false;
+			} else {
+				json_encode($result);
+				return $result;
+			}
+
+
 		} catch (Exception $e) {
 			throw $e;
 		}
@@ -190,19 +220,25 @@ class vOauth
 	/**
 	 * json returned: gid,forename,lastname,User,imageurl
 	 *
+	 * @param array $field
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getGoogleData()
+	public function getGoogleData($field = array())
 	{
 		if (!$this->token) throw new Exception("No token");
-		$fields = array(
-			"state" => md5("redirect")
-		);
+		$fields = array();
+		$fields = array_merge($fields, $field);
+
 		try {
 			$result = $this->callPost(vOAUTH::URL_GOOGLEDATA, $fields, "Authorization: Bearer " . $this->token);
 
-			return $result->{'data'};
+			if ($result->{'status'} === "error") {
+				return false;
+			} else {
+				return $result->{'data'};
+			}
 		} catch (Exception $e) {
 			throw $e;
 		}
@@ -211,18 +247,23 @@ class vOauth
 	/**
 	 * json returned: email
 	 *
+	 * @param array $field
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getEmail()
+	public function getEmail($field = array())
 	{
 		if (!$this->token) throw new Exception("No token");
-		$fields = array(
-			"state" => md5("redirect")
-		);
+		$fields = array();
+		$fields = array_merge($fields, $field);
 		try {
 			$result = $this->callPost(vOAUTH::URL_EMAIL, $fields, "Authorization: Bearer " . $this->token);
-			return $result->{'data'};
+			if ($result->{'status'} === "error") {
+				return false;
+			} else {
+				return $result->{'data'};
+			}
 		} catch (Exception $e) {
 			throw $e;
 		}
@@ -231,18 +272,23 @@ class vOauth
 	/**
 	 * json returned: telegram
 	 *
+	 * @param array $field
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getTelegram()
+	public function getTelegram($field = array())
 	{
 		if (!$this->token) throw new Exception("No token");
-		$fields = array(
-			"state" => md5("redirect")
-		);
+		$fields = array();
+		$fields = array_merge($fields, $field);
 		try {
 			$result = $this->callPost(vOAUTH::URL_TELEGRAM, $fields, "Authorization: Bearer " . $this->token);
-			return $result->{'data'};
+			if ($result->{'status'} === "error") {
+				return false;
+			} else {
+				return $result->{'data'};
+			}
 		} catch (Exception $e) {
 			throw $e;
 		}
@@ -250,24 +296,30 @@ class vOauth
 	}
 
 	/**
-	 * @param $refreshToken
+	 * @param       $refreshToken
+	 *
+	 * @param       $state
+	 *
+	 * @param array $field
 	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public function getNewToken($refreshToken)
+	public function getNewToken($refreshToken, $state, $field = array())
 	{
-
 		$fields = array(
 			'grant_type'    => 'refresh_token',
 			'refresh_token' => $refreshToken,
 			'client_id'     => $this->client,
 			'client_secret' => $this->secret,
-			"state"         => md5("moreRandomStuff")
+			"state"         => md5($state)
 		);
+		$fields = array_merge($fields, $field);
 		$result = $this->callPost(vOAUTH::ENDPOINT_TOKEN, $fields);
 		$this->setToken($result->{'access_token'});
-		$this->setRefreshToken($result->{'refresh_token'});
+		if (isset($result->{'refresh_token'})) {
+			$this->setRefreshToken($result->{'refresh_token'});
+		}
 		return $this->token;
 	}
 
@@ -323,14 +375,6 @@ class vOauth
 	public function setSecret($secret)
 	{
 		$this->secret = $secret;
-	}
-
-	/**
-	 * @param mixed $token
-	 */
-	public function setToken($token)
-	{
-		$this->token = $token;
 	}
 
 }

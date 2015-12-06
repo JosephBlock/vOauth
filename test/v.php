@@ -17,9 +17,13 @@ if(isset($_GET['logout'])){
 }
 
 if(isset($_GET['code'])){
+	if ($_GET['state'] === md5('stateGoesHere')) {
 	$v->setCode(trim($_GET['code']));
-	$_SESSION['vACCESS_TOKEN']=$v->getToken();
-	$_SESSION['vREFRESH']=$v->getRefreshToken();
+		$_SESSION['vACCESS_TOKEN'] = $v->getToken("stateGoesHere");
+		$_SESSION['vREFRESH'] = $v->getRefreshToken();
+	} else {
+		die("CSRF attack");
+	}
 //do something after login
 
 }
@@ -38,6 +42,6 @@ elseif(isset($_SESSION['vACCESS_TOKEN'])){
 }else{
 
 	//if not logged in, create auth url
-	echo $auth=$v->getAuthURL();
+	echo $auth = $v->getAuthURL("stateGoesHere");
 }
 
