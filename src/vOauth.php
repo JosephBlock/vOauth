@@ -3,7 +3,7 @@
 /**
  *
  * Licence: MIT License (MIT)
- * Copyright (c) 2015 Joseph Block
+ * Copyright (c) 2016 Joseph Block
  *
  * This class is used to communicate and authenticate against V
  *
@@ -175,7 +175,7 @@ class vOauth
 		try {
 			$result = $this->callPost(vOAUTH::URL_PROFILE, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
-				return false;
+				throw new Exception("Must re-auth");
 			} else {
 				return $result->{'data'};
 			}
@@ -205,7 +205,7 @@ class vOauth
 			$result = $this->callPost(vOAUTH::URL_OAUTH_USERINFO, $fields, "Authorization: Bearer " . $this->token);
 
 			if ($result->{'status'} === "error") {
-				return false;
+				throw new Exception("Must re-auth");
 			} else {
 				json_encode($result);
 				return $result;
@@ -235,7 +235,7 @@ class vOauth
 			$result = $this->callPost(vOAUTH::URL_GOOGLEDATA, $fields, "Authorization: Bearer " . $this->token);
 
 			if ($result->{'status'} === "error") {
-				return false;
+				throw new Exception("Must re-auth");
 			} else {
 				return $result->{'data'};
 			}
@@ -260,7 +260,7 @@ class vOauth
 		try {
 			$result = $this->callPost(vOAUTH::URL_EMAIL, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
-				return false;
+				throw new Exception("Must re-auth");
 			} else {
 				return $result->{'data'};
 			}
@@ -285,7 +285,7 @@ class vOauth
 		try {
 			$result = $this->callPost(vOAUTH::URL_TELEGRAM, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
-				return false;
+				throw new Exception("Must re-auth");
 			} else {
 				return $result->{'data'};
 			}
