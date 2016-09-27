@@ -7,6 +7,7 @@
  *
  * This class is used to communicate and authenticate against V
  *
+ * VERSION 1.5
  */
 class vOauth
 {
@@ -16,6 +17,7 @@ class vOauth
 	const URL_EMAIL = "api/v1/email";
 	const URL_TELEGRAM = "api/v1/telegram";
 	const URL_OAUTH_USERINFO = "api/v1/userinfo";
+	const URL_VTEAMS = "api/v1/teams";
 
 	//Endpoints
 	const ENDPOINT_AUTH = "authorize";
@@ -28,6 +30,7 @@ class vOauth
 	const SCOPE_GOOGLEDATA = "googledata";
 	const SCOPE_TELEGRAM = "telegram";
 	const SCOPE_PROFILE = "profile";
+	const SCOPE_TEAMS = "teams";
 
 	//variables
 	public $client;
@@ -41,13 +44,13 @@ class vOauth
 	protected $scopes = array();
 
 	/**
-	 * vOAUTH constructor.
+	 * vOauth constructor.
 	 */
 	public function __construct()
 	{
 
 		$this->ch = curl_init();
-		curl_setopt($this->ch, CURLOPT_USERAGENT, 'VOAuth API v1');
+		curl_setopt($this->ch, CURLOPT_USERAGENT, 'vOauth API v1.5');
 		curl_setopt($this->ch, CURLOPT_POST, true);
 		curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($this->ch, CURLOPT_HEADER, false);
@@ -70,12 +73,14 @@ class vOauth
 		$scope = implode($this->scopes, "%20");
 
 
-		$url = $this->root . vOAUTH::ENDPOINT_AUTH . "?type=web_server&client_id=" . $this->client . "&redirect_uri=" . $this->redirect . "&response_type=code&scope=" . $scope . "&state=" . md5($state);
+		$url = $this->root . vOauth::ENDPOINT_AUTH . "?type=web_server&client_id=" . $this->client . "&redirect_uri=" . $this->redirect . "&response_type=code&scope=" . $scope . "&state=" . md5($state);
 		return $url;
 	}
 
 	/**
-	 * @param $redirect
+	 * sets the redirect
+	 *
+*@param $redirect
 	 */
 	public function setRedirect($redirect)
 	{
@@ -83,7 +88,7 @@ class vOauth
 	}
 
 	/**
-	 *
+	 * destroys the curl session
 	 */
 	public function __destruct()
 	{
@@ -109,7 +114,7 @@ class vOauth
 			'state'         => md5($state)
 		);
 		try {
-			$result = $this->callPost(vOAUTH::ENDPOINT_TOKEN, $fields);
+			$result = $this->callPost(vOauth::ENDPOINT_TOKEN, $fields);
 
 			$this->setToken($result->{'access_token'});
 			$this->setRefreshToken($result->{'refresh_token'});
@@ -160,7 +165,7 @@ class vOauth
 	}
 
 	/**
-	 * Json returned: enlid,vlevel,vpoints,quarantine,active,blacklisted,verified,agent
+	 * Json returned: enlid,vlevel,vpoints,quarantine,active,blacklisted,verified,agent,flagged
 	 *
 	 * @param array $field
 	 *
@@ -173,7 +178,7 @@ class vOauth
 		$fields = array();
 		$fields = array_merge($fields, $field);
 		try {
-			$result = $this->callPost(vOAUTH::URL_PROFILE, $fields, "Authorization: Bearer " . $this->token);
+			$result = $this->callPost(vOauth::URL_PROFILE, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
 				throw new Exception("Must re-auth");
 			} else {
@@ -202,7 +207,7 @@ class vOauth
 		$fields = array();
 		$fields = array_merge($fields, $field);
 		try {
-			$result = $this->callPost(vOAUTH::URL_OAUTH_USERINFO, $fields, "Authorization: Bearer " . $this->token);
+			$result = $this->callPost(vOauth::URL_OAUTH_USERINFO, $fields, "Authorization: Bearer " . $this->token);
 
 			if ($result->{'status'} === "error") {
 				throw new Exception("Must re-auth");
@@ -232,7 +237,7 @@ class vOauth
 		$fields = array_merge($fields, $field);
 
 		try {
-			$result = $this->callPost(vOAUTH::URL_GOOGLEDATA, $fields, "Authorization: Bearer " . $this->token);
+			$result = $this->callPost(vOauth::URL_GOOGLEDATA, $fields, "Authorization: Bearer " . $this->token);
 
 			if ($result->{'status'} === "error") {
 				throw new Exception("Must re-auth");
@@ -258,7 +263,7 @@ class vOauth
 		$fields = array();
 		$fields = array_merge($fields, $field);
 		try {
-			$result = $this->callPost(vOAUTH::URL_EMAIL, $fields, "Authorization: Bearer " . $this->token);
+			$result = $this->callPost(vOauth::URL_EMAIL, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
 				throw new Exception("Must re-auth");
 			} else {
@@ -283,7 +288,7 @@ class vOauth
 		$fields = array();
 		$fields = array_merge($fields, $field);
 		try {
-			$result = $this->callPost(vOAUTH::URL_TELEGRAM, $fields, "Authorization: Bearer " . $this->token);
+			$result = $this->callPost(vOauth::URL_TELEGRAM, $fields, "Authorization: Bearer " . $this->token);
 			if ($result->{'status'} === "error") {
 				throw new Exception("Must re-auth");
 			} else {
@@ -294,6 +299,72 @@ class vOauth
 		}
 
 	}
+
+	/**
+	 * returned json array:
+	 * {
+	 * "teamid": 1,
+	 * "team":   "My Team 1",
+	 * "role":   "Operator",
+	 * "admin":  true
+	 * },
+	 * {
+	 * "teamid": 1337,
+	 * "team":   "My Other Team",
+	 * "role":   "Linker",
+	 * "admin":  false
+	 * }
+	 *
+	 * @param array $field
+	 *
+	 * @return mixed
+	 * @throws Exception
+	 */
+	public function getVTeams($field = array())
+	{
+		if (!$this->token) throw new Exception("No token");
+		$fields = array();
+		$fields = array_merge($fields, $field);
+		try {
+			$result = $this->callPost(vOauth::URL_VTEAMS, $fields, "Authorization: Bearer " . $this->token);
+			if ($result->{'status'} === "error") {
+				throw new Exception("Must re-auth");
+			} else {
+				return $result->{'data'};
+			}
+		} catch (Exception $e) {
+			throw $e;
+		}
+	}
+
+	/**
+	 * returns json array:
+	 * role, admin, agent, level, enlid, gid, vlevel, vpoints, quarantine, active, blacklisted, verified, telegramid,
+	 * telegram, email, lat, lon, distance
+	 *
+	 * @param       $teamID
+	 * @param array $field
+	 *
+	 * @return mixed
+	 * @throws Exception
+	 */
+	public function getVTeamInfo($teamID, $field = array())
+	{
+		if (!$this->token) throw new Exception("No token");
+		$fields = array();
+		$fields = array_merge($fields, $field);
+		try {
+			$result = $this->callPost(vOauth::URL_VTEAMS . "/" . $teamID, $fields, "Authorization: Bearer " . $this->token);
+			if ($result->{'status'} === "error") {
+				throw new Exception("Must re-auth");
+			} else {
+				return $result->{'data'};
+			}
+		} catch (Exception $e) {
+			throw $e;
+		}
+	}
+
 
 	/**
 	 * @param       $refreshToken
@@ -315,7 +386,7 @@ class vOauth
 			"state"         => md5($state)
 		);
 		$fields = array_merge($fields, $field);
-		$result = $this->callPost(vOAUTH::ENDPOINT_TOKEN, $fields);
+		$result = $this->callPost(vOauth::ENDPOINT_TOKEN, $fields);
 		$this->setToken($result->{'access_token'});
 		if (isset($result->{'refresh_token'})) {
 			$this->setRefreshToken($result->{'refresh_token'});
