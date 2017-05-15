@@ -9,7 +9,7 @@ $v = new vOauth();
  */
 $v->setClient("Your client here");
 $v->setSecret("Your secret here");
-$v->addScope(array(vOauth::SCOPE_PROFILE));
+$v->addScope(array(vOauth::SCOPE_PROFILE, vOauth::SCOPE_CONNECTIONENLID, vOauth::SCOPE_CONNECTIONGID));
 $v->setRedirect("redirect URL here");
 if (isset($_GET['logout'])) {
 	unset($_SESSION['vACCESS_TOKEN']);
@@ -34,9 +34,11 @@ if (isset($_GET['code'])) {
 	$v->setToken($_SESSION['vACCESS_TOKEN']);
 	try {
 		$vInfo = $v->getVInfo();
-		echo "you are logged into v. Welcome back " . $vInfo->{'agent'};
+		echo "You are logged into V. Welcome back " . $vInfo->{'agent'} . "<br><br>";
+		var_dump($v->connection("39d8d4e351a0de8ce39ab3334f628628fac6e06a", $vInfo->{'enlid'}));
 
 	} catch (Exception $e) {
+		error_log($e->getMessage());
 		echo $e->getMessage();
 	}
 
@@ -47,4 +49,3 @@ if (isset($_GET['code'])) {
 	//redirect to V Oauth login page
 	header("Location: " . $auth);
 }
-

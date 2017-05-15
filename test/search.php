@@ -9,7 +9,7 @@ $v = new vOauth();
  */
 $v->setClient("Your client here");
 $v->setSecret("Your secret here");
-$v->addScope(array(vOauth::SCOPE_PROFILE));
+$v->addScope(array(vOauth::SCOPE_PROFILE, vOauth::SCOPE_SEARCH));
 $v->setRedirect("redirect URL here");
 if (isset($_GET['logout'])) {
 	unset($_SESSION['vACCESS_TOKEN']);
@@ -34,9 +34,17 @@ if (isset($_GET['code'])) {
 	$v->setToken($_SESSION['vACCESS_TOKEN']);
 	try {
 		$vInfo = $v->getVInfo();
-		echo "you are logged into v. Welcome back " . $vInfo->{'agent'};
+		echo "You are logged into V. Welcome back " . $vInfo->{'agent'} . "<br>";
+		//create a Search object
+		$search = new Search();
+		$search->setQuery("disastertrident");
+		var_dump($v->search($search));
+		//or creating an associated array with the values
+		$search2 = new Search(array("query" => "disastertrident"));
+		var_dump($v->search($search2));
 
 	} catch (Exception $e) {
+		error_log($e->getMessage());
 		echo $e->getMessage();
 	}
 

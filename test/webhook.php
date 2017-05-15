@@ -9,7 +9,7 @@ $v = new vOauth();
  */
 $v->setClient("Your client here");
 $v->setSecret("Your secret here");
-$v->addScope(array(vOauth::SCOPE_PROFILE));
+$v->addScope(array(vOauth::SCOPE_PROFILE, vOauth::SCOPE_WEBHOOK));
 $v->setRedirect("redirect URL here");
 if (isset($_GET['logout'])) {
 	unset($_SESSION['vACCESS_TOKEN']);
@@ -34,9 +34,17 @@ if (isset($_GET['code'])) {
 	$v->setToken($_SESSION['vACCESS_TOKEN']);
 	try {
 		$vInfo = $v->getVInfo();
-		echo "you are logged into v. Welcome back " . $vInfo->{'agent'};
+		echo "You are logged into V. Welcome back " . $vInfo->{'agent'} . "<br><br>";
+		echo "Setting up webhook to URL " . $v->redirect . "<br><br>";
+		var_dump($v->set_webhook(vOauth::WEBHOOK_PROFILE, $v->redirect));
+		echo "<br><br>Returning webhook <br><br>";
+		var_dump($v->get_webhook(vOauth::WEBHOOK_PROFILE));
+		echo "<br><br>deleting webhook <br><br>";
+		var_dump($v->delete_webhook(vOauth::WEBHOOK_PROFILE));
+
 
 	} catch (Exception $e) {
+		error_log($e->getMessage());
 		echo $e->getMessage();
 	}
 
