@@ -3,11 +3,11 @@
 /**
  *
  * Licence: MIT License (MIT)
- * Copyright (c) 2016 Joseph Block
+ * Copyright (c) 2017 Joseph Block
  *
  * This class is used to communicate and authenticate against V
  *
- * VERSION 1.6
+ * VERSION 1.7
  */
 class vOauth
 {
@@ -66,7 +66,23 @@ class vOauth
 	//Webhook Endpoints
 	const WEBHOOK_ENDPOINT = "api/v2/callback/{TYPE}";
 
-
+	//Testing Scope
+	const TESTING_SCOPE = array(vOauth::SCOPE_OPENID,
+		vOauth::SCOPE_EMAIL,
+		vOauth::SCOPE_GOOGLEDATA,
+		vOauth::SCOPE_TELEGRAM,
+		vOauth::SCOPE_PROFILE,
+		vOauth::SCOPE_TEAMS,
+		vOauth::SCOPE_SEARCH,
+		vOauth::SCOPE_TRUSTENLID,
+		vOauth::SCOPE_TRUSTGID,
+		vOauth::SCOPE_CONNECTIONENLID,
+		vOauth::SCOPE_CONNECTIONGID,
+		vOauth::SCOPE_BULKINFOENLID,
+		vOauth::SCOPE_BULKINFOGID,
+		vOauth::SCOPE_BULKINFOTELEGRAMID,
+		vOauth::SCOPE_QLOCATION,
+		vOauth::SCOPE_WEBHOOK);
 
 	//variables
 	public $client;
@@ -176,6 +192,8 @@ class vOauth
 	 * @param string|null $auth
 	 * @param string      $fields_string
 	 *
+	 * @param string      $contentType
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
@@ -192,45 +210,6 @@ class vOauth
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
 		curl_setopt($ch, CURLOPT_POST, count($parms));
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-		$response_body = curl_exec($ch);
-		if (curl_error($ch)) {
-			throw new Exception("API call to $url failed: " . curl_error($ch));
-		}
-		$result = json_decode($response_body);
-		if (isset($result->{'error'})) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
-		if ($result === null) throw new Exception('We were unable to decode the JSON response from the API: ' . $response_body);
-
-		return $result;
-	}
-
-	public function callGet($url, $auth = null, $contentType = "application/x-www-form-urlencoded")
-	{
-		if (!$this->client || !$this->secret) throw new Exception('You must provide a client and secret');
-		if (!$this->redirect) throw new Exception('You must provide a redirect URL');
-		$ch = $this->ch;
-		curl_setopt($ch, CURLOPT_URL, $this->root . $url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-		$response_body = curl_exec($ch);
-		if (curl_error($ch)) {
-			throw new Exception("API call to $url failed: " . curl_error($ch));
-		}
-		$result = json_decode($response_body);
-		if (isset($result->{'error'})) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
-		if ($result === null) throw new Exception('We were unable to decode the JSON response from the API: ' . $response_body);
-
-		return $result;
-	}
-
-	public function callDelete($url, $auth = null, $contentType = "application/x-www-form-urlencoded")
-	{
-		if (!$this->client || !$this->secret) throw new Exception('You must provide a client and secret');
-		if (!$this->redirect) throw new Exception('You must provide a redirect URL');
-		$ch = $this->ch;
-		curl_setopt($ch, CURLOPT_URL, $this->root . $url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-
 		$response_body = curl_exec($ch);
 		if (curl_error($ch)) {
 			throw new Exception("API call to $url failed: " . curl_error($ch));
@@ -688,6 +667,25 @@ class vOauth
 		}
 	}
 
+	public function callGet($url, $auth = null, $contentType = "application/x-www-form-urlencoded")
+	{
+		if (!$this->client || !$this->secret) throw new Exception('You must provide a client and secret');
+		if (!$this->redirect) throw new Exception('You must provide a redirect URL');
+		$ch = $this->ch;
+		curl_setopt($ch, CURLOPT_URL, $this->root . $url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+		$response_body = curl_exec($ch);
+		if (curl_error($ch)) {
+			throw new Exception("API call to $url failed: " . curl_error($ch));
+		}
+		$result = json_decode($response_body);
+		if (isset($result->{'error'})) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
+		if ($result === null) throw new Exception('We were unable to decode the JSON response from the API: ' . $response_body);
+
+		return $result;
+	}
+
 	public function delete_webhook($type)
 	{
 		if (!$this->token) throw new Exception("No token");
@@ -703,6 +701,27 @@ class vOauth
 			throw $e;
 		}
 	}
+
+	public function callDelete($url, $auth = null, $contentType = "application/x-www-form-urlencoded")
+	{
+		if (!$this->client || !$this->secret) throw new Exception('You must provide a client and secret');
+		if (!$this->redirect) throw new Exception('You must provide a redirect URL');
+		$ch = $this->ch;
+		curl_setopt($ch, CURLOPT_URL, $this->root . $url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+		$response_body = curl_exec($ch);
+		if (curl_error($ch)) {
+			throw new Exception("API call to $url failed: " . curl_error($ch));
+		}
+		$result = json_decode($response_body);
+		if (isset($result->{'error'})) throw new Exception("Error: " . $result->{'error'} . " Message: " . $result->{'error_description'});
+		if ($result === null) throw new Exception('We were unable to decode the JSON response from the API: ' . $response_body);
+
+		return $result;
+	}
+
 	/**
 	 * @param       $refreshToken
 	 *
