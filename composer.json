@@ -11,5 +11,10 @@
       "name": "Joseph Block",
       "email": "joseph@block.im"
     }
-  ]
+  ],
+  "autoload": {
+	"classmap": [
+	  "src/vOauth.php"
+	]
+  }
 }
