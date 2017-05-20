@@ -674,7 +674,7 @@ class vOauth
 		$ch = $this->ch;
 		curl_setopt($ch, CURLOPT_URL, $this->root . $url);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $contentType, $auth));
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
 		$response_body = curl_exec($ch);
 		if (curl_error($ch)) {
 			throw new Exception("API call to $url failed: " . curl_error($ch));
