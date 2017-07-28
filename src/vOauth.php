@@ -93,6 +93,7 @@ class vOauth
 	public $token;
 	public $refreshToken;
 	public $code;
+	public $expiresIn;
 	protected $scopes = array();
 
 	/**
@@ -111,7 +112,10 @@ class vOauth
 		curl_setopt($this->ch, CURLOPT_TIMEOUT, 600);
 
 	}
-
+	public function getExpiresIn()
+	{
+		return $this->expiresIn;
+	}
 	/**
 	 * @param $state
 	 *
@@ -168,7 +172,7 @@ class vOauth
 		);
 		try {
 			$result = $this->callPost(vOauth::ENDPOINT_TOKEN, $fields);
-
+			$this->expiresIn = $result->{'expires_in'};
 			$this->setToken($result->{'access_token'});
 			$this->setRefreshToken($result->{'refresh_token'});
 
